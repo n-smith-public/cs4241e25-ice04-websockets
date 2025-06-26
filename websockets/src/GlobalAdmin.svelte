@@ -16,8 +16,7 @@
   let editingSlur = null;
   let isConnected = false;
 
-  // ... (all the existing functions remain the same) ...
-
+  // Exit back to home to join/create chat rooms
   const goToChatRooms = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.close();
@@ -25,12 +24,14 @@
     dispatch('goToChatRooms');
   }
 
+  // Connect to the WebSocket server
   const connectToServer = () => {
     const wsProtocol = window.location.protocol === "https:" ? 'wss:' : 'ws:';
     const isDev = window.location.port === '5173';
     const wsHost = isDev ? 'localhost:3000' : window.location.host;
     ws = new WebSocket(`${wsProtocol}//${wsHost}`);
 
+    // On opening hte connection, send a global admin login request
     ws.onopen = () => {
       console.log('Global admin connected');
       isConnected = true;
@@ -40,6 +41,8 @@
       }));
     };
 
+    // On a new message received
+    // Used for receiving filter data and updates
     ws.onmessage = (msg) => {
       const data = JSON.parse(msg.data);
       console.log('Global admin received:', data);
@@ -58,6 +61,7 @@
       }
     };
 
+    // Handle connection close
     ws.onclose = () => {
       console.log('Global admin disconnected');
       isConnected = false;
@@ -69,6 +73,7 @@
     };
   };
 
+  // Add a new item to the swear filter
   const addSwear = () => {
     const trimmedSwear = newSwear.trim().toLowerCase();
     if (trimmedSwear && !filterData.swears.includes(trimmedSwear)) {
@@ -81,6 +86,7 @@
     }
   };
 
+  // Add a new item to the slur filter
   const addSlur = () => {
     const trimmedSlur = newSlur.trim().toLowerCase();
     if (trimmedSlur && !filterData.slurs.includes(trimmedSlur)) {
@@ -93,6 +99,7 @@
     }
   };
 
+  // Remove a swear word from the filter
   const removeSwear = (word) => {
     filterData = {
       ...filterData,
@@ -101,6 +108,7 @@
     updateFilter();
   };
 
+  // Remove a slur from the filter
   const removeSlur = (word) => {
     filterData = {
       ...filterData,
@@ -109,6 +117,7 @@
     updateFilter();
   };
 
+  // Start editing a swear or slur
   const startEdit = (word, type) => {
     if (type === 'swear') {
       editingSwear = word;
@@ -117,6 +126,7 @@
     }
   };
 
+  // Save the edited swear or slur to the filter
   const saveEdit = (oldWord, newWord, type) => {
     const trimmedNewWord = newWord.trim().toLowerCase();
     if (trimmedNewWord && trimmedNewWord !== oldWord) {
@@ -149,11 +159,13 @@
     }
   };
 
+  // Cancel the current edit
   const cancelEdit = () => {
     editingSwear = null;
     editingSlur = null;
   };
 
+  // Update the filter data on the server
   const updateFilter = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
@@ -163,6 +175,7 @@
     }
   };
 
+  // Logout from the global admin panel
   const logout = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.close();
@@ -170,6 +183,7 @@
     dispatch('logout');
   };
 
+  // Handle enter key usage for buttons
   const handleKeyPress = (event, type) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -181,6 +195,7 @@
     }
   };
 
+  // Handle key presses for editing
   const handleEditKeyPress = (event, oldWord, type) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -221,6 +236,7 @@
   </div>
 
   <div class="grid-2 responsive-grid margin-bottom-large">
+    <!-- Swear Words -->
     <div class="container container-border">
       <h2 class="text-warning text-center">Swear Words ({filterData.swears.length})</h2>
       
@@ -258,6 +274,7 @@
       </div>
     </div>
 
+    <!-- Slurs -->
     <div class="container container-border">
       <h2 class="text-warning text-center">Slurs ({filterData.slurs.length})</h2>
       
@@ -282,7 +299,6 @@
                 value={word}
                 on:blur={(e) => handleEditBlur(e, word, 'slur')}
                 on:keypress={(e) => handleEditKeyPress(e, word, 'slur')}
-                autofocus
               />
             {:else}
               <span on:dblclick={() => startEdit(word, 'slur')}>{word}</span>
@@ -297,8 +313,9 @@
     </div>
   </div>
 
+  <!-- Usage Guide -->
   <div class="help-section">
-    <h3>💡 Instructions</h3>
+    <h3>Instructions</h3>
     <ul>
       <li>Double-click any word to edit it inline</li>
       <li>Use the † button to edit or × to remove words</li>

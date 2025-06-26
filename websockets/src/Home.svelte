@@ -13,10 +13,12 @@
 
   $: isGlobalAdmin = globalAdminPassword.length > 0;
 
+  /* Generate a unique room PIN of 4 digits */
   const generatePin = () => {
     return Math.floor(1000 + Math.random() * 9000).toString();
   };
 
+  /* Create a new room */
   const createRoom = () => {
     if (displayName.trim()) {
       const newPin = generatePin();
@@ -28,6 +30,7 @@
     }
   };
 
+  /* Join an existing room */
   const joinRoom = () => {
     if (displayName.trim() && roomPin.trim() && roomPin.length === 4) {
       dispatch('joinRoom', {
@@ -38,6 +41,7 @@
     }
   };
 
+  /* Login as global admin */
   const globalAdminLogin = () => {
     if (displayName.trim() && globalAdminPassword.trim()) {
         dispatch('globalAdminLogin', {
@@ -47,6 +51,7 @@
     }
   };
 
+  /* Helper function to handle enter key press */
   const handleKeyPress = (event) => {
     if (event.key === 'Enter') {
       if (mode === 'create') {
@@ -107,6 +112,7 @@
     {/if}
   </div>
 
+  <!-- Chat Room Creation -->
   {#if mode === 'create'}
     <div class="section margin-top">
       <p class="text-light text-medium margin-bottom">Create a new chat room with a randomly generated 4-digit PIN</p>
@@ -140,6 +146,7 @@
         Create Room
       </button>
     </div>
+    <!-- Join an existing chat room-->
   {:else if mode === 'join'}
     <div class="section margin-top">
       <label class="form-label" for="roomPin">Room PIN:</label>
@@ -161,6 +168,7 @@
         Join Room
       </button>
     </div>
+    <!-- Global Admin Login-->
   {:else if mode === 'globalAdmin'}
     <div class="section margin-top">
       <label class="form-label" for="globalAdminPassword">Global Admin Password:</label>

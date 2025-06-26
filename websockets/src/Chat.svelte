@@ -20,6 +20,7 @@
   let roomProfanityFilter = 'none';
   let isGlobalAdmin = false;
 
+  // Connect to the WebSocket server
   const connectToChat = () => {
     const wsProtocol = window.location.protocol === "https:" ? 'wss:' : 'ws:';
     const isDev = window.location.port === '5173'; // Vite dev server port
@@ -27,6 +28,7 @@
     ws = new WebSocket(`${wsProtocol}//${wsHost}`);
 
     ws.onopen = () => {
+      // Send a join message to all other users
         const joinMessage = {
             type: 'join',
             room: roomPin,
@@ -46,23 +48,29 @@
       const data = JSON.parse(msg.data);
       console.log('Received:', data);
 
-      if (data.type === 'userList') {
-        connectedUsers = data.users;
-      } else if (data.type === 'adminStatus') {
-        isAdmin = data.isAdmin;
-        isGlobalAdmin = data.isGlobalAdmin || false;
-        adminName = data.adminName;
-        console.log(`Admin status: isAdmin=${isAdmin}, isGlobalAdmin=${isGlobalAdmin}`);
-      } else if (data.type === 'roomSettings') {
-        roomProfanityFilter = data.profanityFilter;
-      } else if (data.type === 'messageDeleted') {
-        msgs = msgs.filter(msg => msg.id !== data.messageId);
-      } else if (data.type === 'kicked') {
-        alert(data.message);
-        leaveRoom();
-      } else {
-        msgs = msgs.concat([data]);
-      }
+      switch(data.type) {
+        case 'userList':
+          connectedUsers = data.users;
+          break;
+        case 'adminStatus':
+          isAdmin = data.isAdmin;
+          isGlobalAdmin = data.isGlobalAdmin || false;
+          adminName = data.adminName;
+          console.log(`Admin status: isAdmin=${isAdmin}, isGlobalAdmin=${isGlobalAdmin}`);
+          break;
+        case 'roomSettings':
+          roomProfanityFilter = data.profanityFilter;
+          break;
+        case 'messageDeleted':
+          msgs = msgs.filter(msg => msg.id !== data.messageId);
+          break;
+        case 'kicked':
+          alert(data.message);
+          leaveRoom();
+          break;
+        default:
+          msgs = msgs.concat([data]);
+      };
     };
 
     ws.onclose = () => {
@@ -70,8 +78,10 @@
     };
   };
 
+  // Send a message to the chat
   const send = () => {
     if (messageInput.trim() && ws) {
+      // Parse into a message object
       const messageData = {
         id: Date.now() + Math.random(),
         type: 'message',
@@ -81,12 +91,16 @@
         timestamp: new Date().toISOString()
       };
 
+      // Send to the server
       ws.send(JSON.stringify(messageData));
+      // Update local cache with your message
       msgs = msgs.concat([messageData]);
+      // Clear the message input field
       messageInput = '';
     }
   };
   
+  // Admin Action - Set the filter
   const updateProfanityFilter = (event) => {
     if (isAdmin) {
       const newFilterLevel = event.target.value;
@@ -97,6 +111,7 @@
     }
   };
 
+  // Admin Action - Delete a message
   const deleteMessage = (messageId) => {
     if (isAdmin && confirm('Are you sure you want to delete this message?')) {
       ws.send(JSON.stringify({
@@ -106,6 +121,7 @@
     }
   };
 
+  // Admin Action - Kick a user
   const kickUser = (userName) => {
     if (isAdmin && userName !== displayName && confirm(`Are you sure you want to kick ${userName}?`)) {
       ws.send(JSON.stringify({
@@ -115,6 +131,7 @@
     }
   };
 
+  // Leave the current chat room
   const leaveRoom = () => {
     if (ws) {
       ws.close();
@@ -122,16 +139,19 @@
     dispatch('leaveRoom');
   };
 
+  // Handle Enter key press for sending messages
   const handleKeyPress = (event) => {
     if (event.key === 'Enter') {
       send();
     }
   };
 
+  // Format the message timestamp to users local time
   const formatTime = (timestamp) => {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Makes the filter options readable
   const getFilterDisplayText = (filter) => {
     switch(filter) {
       case 'none': return 'OFF';
@@ -152,6 +172,7 @@
     <div class="room-info">
       <h2>Room: {roomPin}</h2>
       <p>Welcome, {displayName}! 
+        <!--Show your role in the chat -->
         {#if isGlobalAdmin}
           Δ (Global Admin)
         {:else if isAdmin}
@@ -160,24 +181,29 @@
           (Admin: {adminName})
         {/if}
       </p>
-      <p class="profanity-filter">🛡️ Content Filter: <strong>{getFilterDisplayText(roomProfanityFilter)}</strong></p>
+      <!-- Shows the current content filter for the chat -->
+      <p class="profanity-filter">Content Filter: <strong>{getFilterDisplayText(roomProfanityFilter)}</strong></p>
     </div>
+    <!-- Room Settings is visible if user is Admin or Global Admin -->
     <div class="flex flex-gap">
       {#if isAdmin}
         <button class="btn btn-warning btn-small" on:click={() => showAdminPanel = !showAdminPanel}>
           {showAdminPanel ? 'Hide' : 'Show'} Admin Panel
         </button>
       {/if}
+      <!--Leave the current room -->
       <button class="btn btn-danger btn-small" on:click={leaveRoom}>Leave Room</button>
     </div>
   </div>
 
+  <!-- The Room Settings/Admin Panel -->
   {#if isAdmin && showAdminPanel}
     <div class="container-admin margin-bottom">
       <h3 class="text-warning">Admin Panel</h3>
       
       <div class="section margin-bottom">
         <h4 class="section-admin">Room Settings</h4>
+        <!-- Set/Update the Content Filter Settings -->
         <div class="margin-bottom">
           <label class="form-label" for="profanitySelect">Content Filter:</label>
           <select 
@@ -205,6 +231,7 @@
         </div>
       </div>
 
+      <!-- Allow Admins to remove users from their chat -->
       <div class="section">
         <h4 class="section-admin">Manage Users</h4>
         <div class="flex flex-column flex-gap-small">
@@ -221,6 +248,7 @@
     </div>
   {/if}
 
+  <!-- Displays all of the users currently connected -->
   <div class="users-section">
     <h3 class="users-title">Connected Users ({connectedUsers.length})</h3>
     <p class="user-list">
@@ -231,14 +259,18 @@
           return userDisplay;
         }).join(', ')}
       {:else}
+      <!-- Should never be possible as chats automatically close when no users are connected -->
         No users connected
       {/if}
     </p>
   </div>
 
+  <!-- The Actual Chat -->
   <div class="messages-container margin-bottom">
+    <!-- For each message, show it -->
     {#each msgs as msg}
       <div class="message {msg.type === 'join' ? 'message-join' : msg.type === 'leave' ? 'message-leave' : ''}" data-message-id={msg.id}>
+        <!-- System Messages-->
         {#if msg.type === 'join' || msg.type === 'leave'}
           <div class="message-system">
             <em class:your-join={msg.isYou}>
@@ -252,6 +284,7 @@
             {/if}
           </div>
         {:else}
+        <!-- User Messages -->
           <div class="user-message">
             <div class="message-header">
               <strong>{msg.name}:</strong>
@@ -274,6 +307,7 @@
     {/each}
   </div>
 
+  <!-- Message Input-->
   <div class="input-section">
     <input 
       class="form-input"

@@ -9,6 +9,7 @@
   let profanityFilter = 'none';
   let globalAdminPassword = '';
 
+  /* Join an existing room */
   const joinRoom = (event) => {
     roomPin = event.detail.pin;
     displayName = event.detail.name;
@@ -16,16 +17,19 @@
     currentView = 'chat';
   };
 
+  /* Global admin login */
   const globalAdminLogin = (event) => {
     displayName = event.detail.name;
     globalAdminPassword = event.detail.password;
     currentView = 'globalAdmin';
   };
 
+  /* From global admin, go to home */
   const goToChatRooms = () => {
     currentView = 'home';
   };
 
+  /* Leave the current room */
   const leaveRoom = () => {
     currentView = 'home';
     roomPin = '';
@@ -35,6 +39,7 @@
     profanityFilter = 'none';
   };
 
+  /* Logout as a global admin */
   const logout = () => {
     currentView = 'home';
     displayName = '';
