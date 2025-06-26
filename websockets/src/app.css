@@ -1,9 +1,36 @@
+@import './common.css';
+
 html {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: #2d2d2d;
   color: white;
   margin: 0;
   padding: 0;
+  position: relative;
+}
+
+html::before,
+html::after {
+  content: '';
+  position: fixed;
+  bottom: 300px;
+  right: -100px;
+  width: 600px;
+  height: 30px;
+  background: linear-gradient(45deg, #007bff, #0056b3);
+  transform-origin: bottom right;
+  transform: rotate(-45deg);
+  z-index: -1;
+}
+
+html::before {
+  background: linear-gradient(45deg, #ffc107, #e0a800);
+  transform: rotate(-45deg) translateY(0px);
+}
+
+html::after {
+  background: linear-gradient(45deg, #ffc107, #e0a800);
+  transform: rotate(-45deg) translateY(-40px);
 }
 
 body {

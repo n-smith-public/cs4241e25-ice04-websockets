@@ -1,5 +1,7 @@
 <script>
   import { createEventDispatcher } from 'svelte';
+  import Header from './Header.svelte';
+  import './chat.css';
 
   export let roomPin;
   export let displayName;
@@ -145,6 +147,7 @@
 </script>
 
 <div class="chat-container">
+  <Header />
   <div class="chat-header">
     <div class="room-info">
       <h2>Room: {roomPin}</h2>
@@ -156,28 +159,33 @@
         {:else}
           (Admin: {adminName})
         {/if}
-    </p>
-      <p class="profanity-filter">Content Filter: <strong>{getFilterDisplayText(roomProfanityFilter)}</strong></p>
+      </p>
+      <p class="profanity-filter">🛡️ Content Filter: <strong>{getFilterDisplayText(roomProfanityFilter)}</strong></p>
     </div>
-    <div class="header-buttons">
+    <div class="flex flex-gap">
       {#if isAdmin}
-        <button class="admin-btn" on:click={() => showAdminPanel = !showAdminPanel}>
+        <button class="btn btn-warning btn-small" on:click={() => showAdminPanel = !showAdminPanel}>
           {showAdminPanel ? 'Hide' : 'Show'} Admin Panel
         </button>
       {/if}
-      <button class="leave-btn" on:click={leaveRoom}>Leave Room</button>
+      <button class="btn btn-danger btn-small" on:click={leaveRoom}>Leave Room</button>
     </div>
   </div>
 
   {#if isAdmin && showAdminPanel}
-    <div class="admin-panel">
-      <h3>Admin Panel</h3>
-
-      <div class="admin-section">
-        <h4>Room Settings</h4>
-        <div class="setting-item">
-          <label for="adminFilterSelect">Content Filter Level:</label>
-          <select id="adminFilterSelect" value={roomProfanityFilter} on:change={updateProfanityFilter}>
+    <div class="container-admin margin-bottom">
+      <h3 class="text-warning">Admin Panel</h3>
+      
+      <div class="section margin-bottom">
+        <h4 class="section-admin">Room Settings</h4>
+        <div class="margin-bottom">
+          <label class="form-label" for="profanitySelect">Content Filter:</label>
+          <select 
+            class="form-input form-input-dark form-select"
+            id="profanitySelect" 
+            value={roomProfanityFilter} 
+            on:change={updateProfanityFilter}
+          >
             <option value="none">No Filter</option>
             <option value="swears">Block Swearing Only</option>
             <option value="slurs">Block Slurs Only</option>
@@ -187,21 +195,21 @@
             {#if roomProfanityFilter === 'none'}
               No content filtering applied
             {:else if roomProfanityFilter === 'swears'}
-              Blocks common swear words only
+              Blocks common swear words
             {:else if roomProfanityFilter === 'slurs'}
-              Blocks offensive slurs and hate speech only
+              Blocks offensive slurs and hate speech
             {:else if roomProfanityFilter === 'both'}
               Blocks both swear words and offensive slurs
             {/if}
           </p>
         </div>
       </div>
-      
-      <div class="admin-section">
-        <h4>Manage Users</h4>
-        <div class="user-management">
+
+      <div class="section">
+        <h4 class="section-admin">Manage Users</h4>
+        <div class="flex flex-column flex-gap-small">
           {#each connectedUsers as user}
-            <div class="user-item">
+            <div class="list-item-user flex justify-between align-center">
               <span>{user} {user === displayName ? '(You)' : ''} {user === adminName ? 'Θ' : ''}</span>
               {#if user !== displayName && user !== adminName}
                 <button class="kick-btn" on:click={() => kickUser(user)}>Kick</button>
@@ -213,12 +221,12 @@
     </div>
   {/if}
 
-  <div class="users">
-    <h3>Connected Users ({connectedUsers.length})</h3>
+  <div class="users-section">
+    <h3 class="users-title">Connected Users ({connectedUsers.length})</h3>
     <p class="user-list">
       {#if connectedUsers.length > 0}
         {connectedUsers.map(user => {
-          let userDisplay = user === displayName ? `${user}` : user;
+          let userDisplay = user === displayName ? `${user} (You)` : user;
           if (user === adminName) userDisplay += ' Θ';
           return userDisplay;
         }).join(', ')}
@@ -228,12 +236,17 @@
     </p>
   </div>
 
-  <div class="messages">
+  <div class="messages-container margin-bottom">
     {#each msgs as msg}
-      <div class="message {msg.type}" data-message-id={msg.id}>
+      <div class="message {msg.type === 'join' ? 'message-join' : msg.type === 'leave' ? 'message-leave' : ''}" data-message-id={msg.id}>
         {#if msg.type === 'join' || msg.type === 'leave'}
-          <div class="system-message">
-            <em class:your-join={msg.isYou}>{msg.message}</em>
+          <div class="message-system">
+            <em class:your-join={msg.isYou}>
+              {msg.message}
+              {#if msg.filtered}
+                <span class="filtered-message">(filtered content)</span>
+              {/if}
+            </em>
             {#if msg.timestamp}
               <span class="timestamp">{formatTime(msg.timestamp)}</span>
             {/if}
@@ -245,307 +258,29 @@
               {#if msg.timestamp}
                 <span class="timestamp">{formatTime(msg.timestamp)}</span>
               {/if}
-              {#if msg.filtered}
-                <span class="filtered-message" title="Content was filtered">[Filtered]</span>
-              {/if}
-              {#if isAdmin && msg.type === 'message'}
-                <button class="delete-btn" on:click={() => deleteMessage(msg.id)}>&times;</button>
+              {#if isAdmin}
+                <button class="delete-btn" on:click={() => deleteMessage(msg.id)}>🗑️</button>
               {/if}
             </div>
-            <div class="message-content">{msg.message}</div>
+            <div class="message-content">
+              {msg.message}
+              {#if msg.filtered}
+                <span class="filtered-message">(filtered content)</span>
+              {/if}
+            </div>
           </div>
         {/if}
       </div>
     {/each}
   </div>
 
-  <div class="input">
+  <div class="input-section">
     <input 
-      type="text" 
+      class="form-input"
       bind:value={messageInput} 
-      on:keypress={handleKeyPress} 
-      placeholder="Type a message..." 
+      on:keypress={handleKeyPress}
+      placeholder="Type your message..."
     />
-    <button on:click={send}>Send</button>
+    <button class="btn btn-success btn-medium" on:click={send}>Send</button>
   </div>
 </div>
-
-<style>
-  .chat-container {
-    height: 85vh;
-    display: flex;
-    flex-direction: column;
-    background: #3d3d3d;
-    border-radius: 10px;
-    padding: 20px;
-  }
-
-  .chat-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #555;
-  }
-
-  .room-info h2 {
-    margin: 0;
-    color: #007bff;
-    font-size: 1.5em;
-  }
-
-  .room-info p {
-    margin: 5px 0 0 0;
-    color: #ccc;
-  }
-
-  .profanity-filter {
-    font-size: 14px;
-    color: #ffc107 !important;
-  }
-
-  .header-buttons {
-    display: flex;
-    gap: 10px;
-  }
-
-  .admin-btn {
-    padding: 10px 15px;
-    background: #ffc107;
-    color: #000;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-
-  .admin-btn:hover {
-    background: #e0a800;
-  }
-
-  .leave-btn {
-    padding: 10px 20px;
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-
-  .leave-btn:hover {
-    background: #c82333;
-  }
-
-  .admin-panel {
-    background: #2a2a2a;
-    border: 2px solid #ffc107;
-    border-radius: 6px;
-    padding: 15px;
-    margin-bottom: 15px;
-  }
-
-  .admin-panel h3 {
-    margin: 0 0 15px 0;
-    color: #ffc107;
-  }
-
-  .admin-section {
-    margin-bottom: 20px;
-  }
-
-  .admin-section h4 {
-    margin: 0 0 10px 0;
-    color: #ccc;
-  }
-
-  .setting-item {
-    margin-bottom: 10px;
-  }
-
-  .setting-item label {
-    display: block;
-    color: #ccc;
-    margin-bottom: 8px;
-    font-weight: bold;
-  }
-
-  .setting-item select {
-    width: 100%;
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #555;
-    border-radius: 4px;
-    background: #4a4a4a;
-    color: white;
-    cursor: pointer;
-  }
-
-  .setting-item select option {
-    background: #4a4a4a;
-    color: white;
-  }
-
-  .setting-description {
-    font-size: 12px;
-    color: #aaa;
-    margin: 8px 0 0 0;
-    font-style: italic;
-    min-height: 16px;
-  }
-
-  .user-management {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-
-  .user-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px 10px;
-    background: #4a4a4a;
-    border-radius: 4px;
-  }
-
-  .kick-btn {
-    padding: 5px 10px;
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-  }
-
-  .users {
-    background: #4a4a4a;
-    padding: 15px;
-    border-radius: 6px;
-    margin-bottom: 15px;
-  }
-
-  .users h3 {
-    margin: 0 0 10px 0;
-    color: #ccc;
-    font-size: 16px;
-  }
-
-  .user-list {
-    margin: 0;
-    padding: 0;
-    font-size: 14px;
-    color: white;
-    line-height: 1.4;
-  }
-
-  .messages {
-    flex: 1;
-    overflow-y: auto;
-    border: 1px solid #555;
-    padding: 15px;
-    background: #686868;
-    color: white;
-    border-radius: 6px;
-    margin-bottom: 15px;
-  }
-
-  .message {
-    margin: 8px 0;
-    padding: 8px;
-    border-radius: 4px;
-  }
-
-  .message.join {
-    background: rgba(144, 238, 144, 0.1);
-  }
-
-  .message.leave {
-    background: rgba(255, 182, 193, 0.1);
-  }
-
-  .system-message {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-style: italic;
-  }
-
-  .system-message em {
-    color: #90EE90;
-  }
-
-  .message.leave .system-message em {
-    color: #FFB6C1;
-  }
-
-  .user-message .message-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 4px;
-  }
-
-  .message-content {
-    padding-left: 0;
-  }
-
-  .timestamp {
-    font-size: 12px;
-    color: #aaa;
-    font-style: normal;
-  }
-
-  .filtered-message {
-    font-size: 14px;
-    color: #ffc107;
-  }
-
-  .delete-btn {
-    background: none;
-    border: none;
-    color: #dc3545;
-    cursor: pointer;
-    font-size: 14px;
-    padding: 2px 4px;
-    margin-left: auto;
-  }
-
-  .delete-btn:hover {
-    background: rgba(220, 53, 69, 0.2);
-    border-radius: 2px;
-  }
-
-  .input {
-    display: flex;
-    gap: 10px;
-  }
-
-  .input input {
-    flex: 1;
-    padding: 12px;
-    font-size: 16px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-  }
-
-  .input button {
-    padding: 12px 24px;
-    font-size: 16px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-
-  .input button:hover {
-    background-color: #218838;
-  }
-
-  .your-join {
-    color: #87CEEB !important; /* Light blue for your own join message */
-  }
-</style>

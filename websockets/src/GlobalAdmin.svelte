@@ -1,5 +1,7 @@
 <script>
   import { createEventDispatcher, onDestroy } from 'svelte';
+  import Header from './Header.svelte';
+  import './admin.css';
 
   export let displayName;
   export let globalAdminPassword;
@@ -13,6 +15,8 @@
   let editingSwear = null;
   let editingSlur = null;
   let isConnected = false;
+
+  // ... (all the existing functions remain the same) ...
 
   const goToChatRooms = () => {
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -203,37 +207,40 @@
 </script>
 
 <div class="admin-container">
-  <div class="admin-header">
-    <h1>&Delta; Global Administration Panel</h1>
+  <Header />
+  <div class="header header-warning margin-bottom-large">
+    <h1>Δ Global Administration Panel</h1>
     <p>Welcome, {displayName}!</p>
     {#if !isConnected}
       <p class="connection-status">Connecting...</p>
     {/if}
-   <div class="header-buttons">
-      <button class="chat-rooms-btn" on:click={goToChatRooms}>Go to Chat Rooms</button>
-      <button class="logout-btn" on:click={logout}>Logout</button>
+    <div class="header-buttons">
+      <button class="btn btn-primary" on:click={goToChatRooms}>Go to Chat Rooms</button>
+      <button class="btn btn-danger" on:click={logout}>Logout</button>
     </div>
   </div>
 
-  <div class="filter-management">
-    <div class="filter-section">
-      <h2>Swear Words ({filterData.swears.length})</h2>
+  <div class="grid-2 responsive-grid margin-bottom-large">
+    <div class="container container-border">
+      <h2 class="text-warning text-center">Swear Words ({filterData.swears.length})</h2>
       
       <div class="add-section">
         <input 
+          class="form-input form-input-dark"
           type="text" 
           bind:value={newSwear} 
           on:keypress={(e) => handleKeyPress(e, 'swear')}
           placeholder="Add new swear word..." 
         />
-        <button class="add-btn" on:click={addSwear}>Add</button>
+        <button class="btn btn-success" on:click={addSwear}>Add</button>
       </div>
 
-      <div class="word-list">
+      <div class="list-container">
         {#each filterData.swears as word (word)}
-          <div class="word-item">
+          <div class="list-item">
             {#if editingSwear === word}
               <input 
+                class="word-item input"
                 type="text" 
                 value={word}
                 on:blur={(e) => handleEditBlur(e, word, 'swear')}
@@ -242,8 +249,8 @@
             {:else}
               <span on:dblclick={() => startEdit(word, 'swear')}>{word}</span>
               <div class="word-actions">
-                <button class="edit-btn" on:click={() => startEdit(word, 'swear')}>	&dagger;</button>
-                <button class="remove-btn" on:click={() => removeSwear(word)}>&times;</button>
+                <button class="edit-btn" on:click={() => startEdit(word, 'swear')}>†</button>
+                <button class="remove-btn" on:click={() => removeSwear(word)}>×</button>
               </div>
             {/if}
           </div>
@@ -251,24 +258,26 @@
       </div>
     </div>
 
-    <div class="filter-section">
-      <h2>Slurs ({filterData.slurs.length})</h2>
+    <div class="container container-border">
+      <h2 class="text-warning text-center">Slurs ({filterData.slurs.length})</h2>
       
       <div class="add-section">
         <input 
+          class="form-input form-input-dark"
           type="text" 
           bind:value={newSlur} 
           on:keypress={(e) => handleKeyPress(e, 'slur')}
           placeholder="Add new slur..." 
         />
-        <button class="add-btn" on:click={addSlur}>Add</button>
+        <button class="btn btn-success" on:click={addSlur}>Add</button>
       </div>
 
-      <div class="word-list">
+      <div class="list-container">
         {#each filterData.slurs as word (word)}
-          <div class="word-item">
+          <div class="list-item">
             {#if editingSlur === word}
               <input 
+                class="word-item input"
                 type="text" 
                 value={word}
                 on:blur={(e) => handleEditBlur(e, word, 'slur')}
@@ -278,8 +287,8 @@
             {:else}
               <span on:dblclick={() => startEdit(word, 'slur')}>{word}</span>
               <div class="word-actions">
-                <button class="edit-btn" on:click={() => startEdit(word, 'slur')}>&dagger;</button>
-                <button class="remove-btn" on:click={() => removeSlur(word)}>&times;</button>
+                <button class="edit-btn" on:click={() => startEdit(word, 'slur')}>†</button>
+                <button class="remove-btn" on:click={() => removeSlur(word)}>×</button>
               </div>
             {/if}
           </div>
@@ -292,221 +301,9 @@
     <h3>💡 Instructions</h3>
     <ul>
       <li>Double-click any word to edit it inline</li>
-      <li>Use the &dagger; button to edit or &times; to remove words</li>
+      <li>Use the † button to edit or × to remove words</li>
       <li>Changes are automatically saved and applied to all rooms</li>
       <li>As a global admin, you have admin powers in all chat rooms</li>
     </ul>
   </div>
 </div>
-
-<style>
-  .admin-container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 20px;
-    background: #2d2d2d;
-    color: white;
-    min-height: 100vh;
-  }
-
-  .admin-header {
-    text-align: center;
-    margin-bottom: 30px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid #ffc107;
-  }
-
-  .admin-header h1 {
-    color: #ffc107;
-    margin-bottom: 10px;
-  }
-
-  .admin-header p {
-    color: #ccc;
-    margin-bottom: 20px;
-  }
-
-  .connection-status {
-    color: #ffc107;
-    font-style: italic;
-  }
-
-  .logout-btn {
-    padding: 10px 20px;
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-
-  .logout-btn:hover {
-    background: #c82333;
-  }
-
-  .filter-management {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    margin-bottom: 30px;
-  }
-
-  .filter-section {
-    background: #3d3d3d;
-    padding: 20px;
-    border-radius: 10px;
-    border: 2px solid #555;
-  }
-
-  .filter-section h2 {
-    margin-top: 0;
-    color: #ffc107;
-    text-align: center;
-  }
-
-  .add-section {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-
-  .add-section input {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #555;
-    border-radius: 4px;
-    background: #4a4a4a;
-    color: white;
-  }
-
-  .add-btn {
-    padding: 10px 20px;
-    background: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  .add-btn:hover {
-    background: #218838;
-  }
-
-  .word-list {
-    max-height: 400px;
-    overflow-y: auto;
-    border: 1px solid #555;
-    border-radius: 4px;
-    background: #4a4a4a;
-  }
-
-  .word-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 12px;
-    border-bottom: 1px solid #555;
-  }
-
-  .word-item:last-child {
-    border-bottom: none;
-  }
-
-  .word-item span {
-    flex: 1;
-    cursor: pointer;
-    padding: 4px;
-  }
-
-  .word-item span:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
-  }
-
-  .word-item input {
-    flex: 1;
-    padding: 4px;
-    border: 1px solid #007bff;
-    border-radius: 2px;
-    background: #5a5a5a;
-    color: white;
-  }
-
-  .word-actions {
-    display: flex;
-    gap: 5px;
-  }
-
-  .edit-btn, .remove-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-    padding: 4px;
-    border-radius: 2px;
-  }
-
-  .edit-btn:hover {
-    background: rgba(0, 123, 255, 0.2);
-  }
-
-  .remove-btn:hover {
-    background: rgba(220, 53, 69, 0.2);
-  }
-
-  .help-section {
-    background: #3d3d3d;
-    padding: 20px;
-    border-radius: 10px;
-    border: 2px solid #555;
-  }
-
-  .help-section h3 {
-    color: #ffc107;
-    margin-top: 0;
-  }
-
-  .help-section ul {
-    color: #ccc;
-    line-height: 1.6;
-  }
-
-  @media (max-width: 768px) {
-    .filter-management {
-      grid-template-columns: 1fr;
-      gap: 20px;
-    }
-  }
-
-  .header-buttons {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-  }
-
-  .chat-rooms-btn {
-    padding: 10px 20px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-
-  .chat-rooms-btn:hover {
-    background: #0056b3;
-  }
-
-  .logout-btn {
-    padding: 10px 20px;
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-
-  .logout-btn:hover {
-    background: #c82333;
-  }
-</style>
